@@ -1,0 +1,136 @@
+openapi: 3.0.3
+
+info:
+  title: StockMaster-Pro API
+  version: 1.0.0
+  description: API de gestion des mouvements de stock.
+  contact:
+    name: Équipe StockMaster-Pro
+
+servers:
+  - url: https://api.stockmaster-pro.com/v1
+
+tags:
+  - name: Inventory
+    description: Gestion de l'inventaire et des mouvements de stock
+
+paths:
+  /inventory/movements:
+    post:
+      summary: Déclarer un mouvement de stock
+      description: >
+        Enregistre une entrée ou une sortie de stock pour un emplacement.
+        Une sortie supérieure au stock disponible est refusée.
+      operationId: createInventoryMovement
+      tags:
+        - Inventory
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMovementRequest'
+
+      responses:
+        '201':
+          description: Mouvement de stock créé avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovementResponse'
+
+        '400':
+          description: Requête invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '409':
+          description: Stock insuffisant pour effectuer la sortie
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    CreateMovementRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - emplacementId
+        - typeMouvement
+        - quantite
+
+      properties:
+        emplacementId:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Correspond à la colonne id_emplacement du modèle relationnel
+          example: 1
+
+        typeMouvement:
+          type: string
+          enum:
+            - ENTREE
+            - SORTIE
+          description: Correspond à la colonne type_mouvement
+          example: SORTIE
+
+        quantite:
+          type: integer
+          minimum: 1
+          description: Quantité strictement positive du mouvement
+          example: 5
+
+    MovementResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - emplacementId
+        - typeMouvement
+        - quantite
+        - dateMouvement
+
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 42
+
+        emplacementId:
+          type: integer
+          format: int64
+          example: 1
+
+        typeMouvement:
+          type: string
+          enum:
+            - ENTREE
+            - SORTIE
+          example: SORTIE
+
+        quantite:
+          type: integer
+          minimum: 1
+          example: 5
+
+        dateMouvement:
+          type: string
+          format: date-time
+          example: '2026-09-06T10:30:00Z'
+
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - message
+
+      properties:
+        message:
+          type: string
+          example: Stock insuffisant pour effectuer cette sortie
